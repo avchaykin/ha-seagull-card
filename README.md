@@ -1,5 +1,7 @@
 # Seagull Card
 
+[![Open Bubble Card on Home Assistant Community Store (HACS)](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=avchaykin&repository=ha-seagull-card&category=plugin)
+
 Универсальная пользовательская карточка для Home Assistant c Jinja2-шаблонами (в духе Mushroom Card).
 
 ## Что есть в v0.1
