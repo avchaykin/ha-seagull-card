@@ -1,0 +1,9 @@
+{
+  "name": "ha-seagull-card",
+  "version": "0.1.0",
+  "description": "Universal Home Assistant card with Jinja2 templates",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && cp src/seagull-card.js dist/seagull-card.js"
+  }
+}
