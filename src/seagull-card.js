@@ -94,9 +94,9 @@ class SeagullCard extends HTMLElement {
   _normalizeSubEntities(items) {
     if (!Array.isArray(items)) return [];
     return items
-      .filter((item) => item && typeof item === "object" && item.entity)
+      .filter((item) => item && typeof item === "object")
       .map((item) => ({
-        entity: item.entity,
+        entity: item.entity || "",
         icon_template: item.icon_template || "",
         icon_color_template: item.icon_color_template || "",
         icon_background_color_template: item.icon_background_color_template || "",
@@ -154,6 +154,7 @@ class SeagullCard extends HTMLElement {
     });
 
     (this._config.sub_entities || []).forEach((sub, index) => {
+      if (!sub?.entity) return;
       const subTemplates = {
         icon: sub.icon_template,
         icon_color: sub.icon_color_template,
@@ -246,6 +247,7 @@ class SeagullCard extends HTMLElement {
     const subEntities = this._config.sub_entities || [];
 
     const subHtml = subEntities
+      .filter((sub) => sub?.entity)
       .map((sub, index) => {
         const subState = this._hass?.states?.[sub.entity];
         const subIcon = this._subResolvedValue(index, "icon", subState?.attributes?.icon || "mdi:help-circle");
@@ -461,9 +463,9 @@ class SeagullCardEditor extends HTMLElement {
   _normalizeSubEntities(items) {
     if (!Array.isArray(items)) return [];
     return items
-      .filter((item) => item && typeof item === "object" && item.entity)
+      .filter((item) => item && typeof item === "object")
       .map((item) => ({
-        entity: item.entity,
+        entity: item.entity || "",
         icon_template: item.icon_template || "",
         icon_color_template: item.icon_color_template || "",
         icon_background_color_template: item.icon_background_color_template || "",
@@ -737,8 +739,12 @@ class SeagullCardEditor extends HTMLElement {
   }
 }
 
-customElements.define("seagull-card", SeagullCard);
-customElements.define("seagull-card-editor", SeagullCardEditor);
+if (!customElements.get("seagull-card")) {
+  customElements.define("seagull-card", SeagullCard);
+}
+if (!customElements.get("seagull-card-editor")) {
+  customElements.define("seagull-card-editor", SeagullCardEditor);
+}
 
 window.customCards = window.customCards || [];
 window.customCards.push({
