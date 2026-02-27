@@ -115,7 +115,10 @@ npm run dev:push
 
 Это соберет карточку и загрузит `dist/seagull-card.js` на ваш HA в `/config/www/seagull-card/seagull-card.js` (или путь из `.env.local`).
 
-Скрипт автоматически обновляет `?v=` у ресурса Lovelace (cache bust), чтобы изменения подхватывались без ручного редактирования URL.
+По умолчанию ресурс держится как стабильный URL (`/local/seagull-card/seagull-card.js`) без ручного редактирования в Manage resources.
+
+Если нужен агрессивный cache-bust, включите в `.env.local`:
+`HA_BUMP_RESOURCE_VERSION=true`.
 
 ## Разработка
 
