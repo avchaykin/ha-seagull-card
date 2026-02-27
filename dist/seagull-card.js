@@ -270,8 +270,17 @@ class SeagullCard extends HTMLElement {
 }
 
 class SeagullCardEditor extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
+
   setConfig(config) {
-    this._config = { ...config };
+    this._config = {
+      tap_action: { action: "more-info" },
+      icon_tap_action: { action: "none" },
+      ...config,
+    };
     this._render();
   }
 
@@ -280,77 +289,164 @@ class SeagullCardEditor extends HTMLElement {
     this._render();
   }
 
-  _updateConfig(path, value) {
+  _render() {
+    if (!this._hass || !this._config) return;
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        .stack { display: grid; gap: 12px; }
+        .hint { font-size: 12px; color: var(--secondary-text-color); margin-top: 6px; }
+        .mono-wrap {
+          border: 1px solid var(--divider-color);
+          border-radius: 10px;
+          padding: 4px;
+        }
+        ha-expansion-panel { --ha-card-border-width: 0; }
+      </style>
+      <div class="stack">
+        <ha-expansion-panel outlined expanded>
+          <div slot="header">Context</div>
+          <div id="context-form"></div>
+          <div class="hint">Used in templates and interactions as <code>entity</code>.</div>
+        </ha-expansion-panel>
+
+        <ha-expansion-panel outlined expanded>
+          <div slot="header">Content</div>
+          <div class="mono-wrap"><div id="content-form"></div></div>
+        </ha-expansion-panel>
+
+        <ha-expansion-panel outlined expanded>
+          <div slot="header">Interactions</div>
+          <div id="actions-form"></div>
+        </ha-expansion-panel>
+      </div>
+    `;
+
+    this._renderForm(
+      "#context-form",
+      [
+        {
+          name: "entity",
+          label: "Entity",
+          required: true,
+          selector: { entity: {} },
+        },
+      ],
+      this._config
+    );
+
+    this._renderForm(
+      "#content-form",
+      [
+        { name: "text_template", label: "Text template", selector: { text: { multiline: true } } },
+        { name: "color_template", label: "Card color template", selector: { text: { multiline: true } } },
+        { name: "icon_template", label: "Icon template", selector: { text: { multiline: true } } },
+        { name: "icon_color_template", label: "Icon color template", selector: { text: { multiline: true } } },
+        { name: "icon_background_color_template", label: "Icon background color template", selector: { text: { multiline: true } } },
+      ],
+      this._config
+    );
+
+    this._renderForm(
+      "#actions-form",
+      [
+        {
+          name: "tap_action",
+          label: "Tap behavior",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                { value: "none", label: "none" },
+                { value: "more-info", label: "more-info" },
+                { value: "toggle", label: "toggle" },
+                { value: "navigate", label: "navigate" },
+                { value: "url", label: "url" },
+                { value: "call-service", label: "call-service" },
+              ],
+            },
+          },
+        },
+        {
+          name: "icon_tap_action",
+          label: "Icon tap behavior",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                { value: "none", label: "none" },
+                { value: "more-info", label: "more-info" },
+                { value: "toggle", label: "toggle" },
+                { value: "navigate", label: "navigate" },
+                { value: "url", label: "url" },
+                { value: "call-service", label: "call-service" },
+              ],
+            },
+          },
+        },
+      ],
+      {
+        tap_action: this._config.tap_action?.action || "more-info",
+        icon_tap_action: this._config.icon_tap_action?.action || "none",
+      }
+    );
+  }
+
+  _renderForm(containerSelector, schema, data) {
+    const container = this.shadowRoot.querySelector(containerSelector);
+    if (!container) return;
+
+    const form = document.createElement("ha-form");
+    form.hass = this._hass;
+    form.schema = schema;
+    form.data = data;
+    form.computeLabel = (s) => s.label;
+    form.addEventListener("value-changed", (ev) => this._valueChanged(ev));
+    container.replaceChildren(form);
+
+    // Monospace style for template textareas rendered by ha-form
+    setTimeout(() => {
+      container.querySelectorAll("ha-textfield, textarea, input").forEach((el) => {
+        if ((el.label || "").toLowerCase().includes("template")) {
+          el.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+        }
+      });
+    }, 0);
+  }
+
+  _valueChanged(ev) {
+    const value = ev.detail?.value;
+    if (!value) return;
+
     const newConfig = { ...(this._config || {}) };
 
-    if (path.includes(".")) {
-      const [parent, child] = path.split(".");
-      newConfig[parent] = { ...(newConfig[parent] || {}) };
-      if (value === "" || value == null) delete newConfig[parent][child];
-      else newConfig[parent][child] = value;
-    } else {
-      if (value === "" || value == null) delete newConfig[path];
-      else newConfig[path] = value;
+    if (Object.prototype.hasOwnProperty.call(value, "entity")) {
+      newConfig.entity = value.entity;
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "text_template")) {
+      newConfig.text_template = value.text_template;
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "color_template")) {
+      newConfig.color_template = value.color_template;
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "icon_template")) {
+      newConfig.icon_template = value.icon_template;
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "icon_color_template")) {
+      newConfig.icon_color_template = value.icon_color_template;
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "icon_background_color_template")) {
+      newConfig.icon_background_color_template = value.icon_background_color_template;
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "tap_action")) {
+      newConfig.tap_action = { ...(newConfig.tap_action || {}), action: value.tap_action || "none" };
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "icon_tap_action")) {
+      newConfig.icon_tap_action = { ...(newConfig.icon_tap_action || {}), action: value.icon_tap_action || "none" };
     }
 
     this._config = newConfig;
     fireEvent(this, "config-changed", { config: newConfig });
-  }
-
-  _render() {
-    if (!this._config) return;
-    if (!this.shadowRoot) this.attachShadow({ mode: "open" });
-
-    const entities = Object.keys(this._hass?.states || {}).slice(0, 500);
-    const entityOptions = entities.map((entityId) => `<option value="${entityId}"></option>`).join("");
-
-    this.shadowRoot.innerHTML = `
-      <style>
-        .grid { display: grid; gap: 10px; font-family: var(--primary-font-family); }
-        .row { display: grid; gap: 6px; }
-        .section { border: 1px solid var(--divider-color); border-radius: 12px; padding: 10px; display: grid; gap: 10px; }
-        .title { font-weight: 600; font-size: 13px; color: var(--secondary-text-color); }
-        textarea, input, select {
-          width: 100%; box-sizing: border-box; padding: 8px;
-          border-radius: 8px; border: 1px solid var(--divider-color);
-          background: var(--card-background-color); color: var(--primary-text-color);
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        }
-        textarea { min-height: 58px; resize: vertical; }
-      </style>
-      <div class="grid">
-        <div class="section">
-          <div class="title">Context</div>
-          <input list="seagull-entities" data-config-value="entity" value="${this._config.entity || ""}" />
-          <datalist id="seagull-entities">${entityOptions}</datalist>
-        </div>
-
-        <div class="section">
-          <div class="title">Content Templates</div>
-          <textarea data-config-value="text_template">${this._config.text_template || ""}</textarea>
-          <textarea data-config-value="color_template">${this._config.color_template || ""}</textarea>
-          <textarea data-config-value="icon_template">${this._config.icon_template || ""}</textarea>
-          <textarea data-config-value="icon_color_template">${this._config.icon_color_template || ""}</textarea>
-          <textarea data-config-value="icon_background_color_template">${this._config.icon_background_color_template || ""}</textarea>
-        </div>
-
-        <div class="section">
-          <div class="title">Actions</div>
-          <select data-config-value="tap_action.action">
-            ${["none", "more-info", "toggle", "navigate", "url", "call-service"].map((v) => `<option value="${v}" ${((this._config.tap_action?.action || "more-info") === v) ? "selected" : ""}>tap: ${v}</option>`).join("")}
-          </select>
-          <select data-config-value="icon_tap_action.action">
-            ${["none", "more-info", "toggle", "navigate", "url", "call-service"].map((v) => `<option value="${v}" ${((this._config.icon_tap_action?.action || "none") === v) ? "selected" : ""}>icon tap: ${v}</option>`).join("")}
-          </select>
-        </div>
-      </div>
-    `;
-
-    this.shadowRoot.querySelectorAll("input,textarea,select").forEach((el) => {
-      const path = el.dataset.configValue;
-      if (!path) return;
-      el.addEventListener("change", () => this._updateConfig(path, el.value || ""));
-    });
   }
 }
 
