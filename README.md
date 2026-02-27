@@ -23,7 +23,7 @@ A universal custom Home Assistant card with Jinja2 templates (in the spirit of M
 - Actions:
   - `tap_action` — card click action (default: `toggle`)
   - `icon_tap_action` — main icon click action
-- `sub_entities` — right-aligned nested items (each has its own `entity`, templates, and `tap_action`)
+- `sub_entities` — right-aligned nested items (each has its own `entity`, templates, badges, and `tap_action`)
 - Lovelace visual editor support
 - Enlarged icon block (icon + circular background)
 - Smooth color transitions
@@ -83,6 +83,8 @@ sub_entities:
     icon_color_template: "{{ '#000000' }}"
     icon_background_color_template: "{{ '#ffffff' }}"
     icon_border_color_template: "{{ '#ffffff' }}"
+    badge_icon_template: "{{ 'mdi:heat-wave' }}"
+    badge_color_template: "{{ '#ff3b30' }}"
     text_template: "{{ states(entity) }}%"
     tap_action:
       action: more-info
@@ -91,6 +93,8 @@ sub_entities:
     icon_color_template: "{{ '#000000' }}"
     icon_background_color_template: "{{ '#ffffff' }}"
     icon_border_color_template: "{{ '#ffffff' }}"
+    badge_icon_template: ""
+    badge_color_template: "{{ '#ff3b30' }}"
     text_template: ""
     tap_action:
       action: more-info
