@@ -21,6 +21,8 @@ source "$ENV_FILE"
 SSH_PORT="${HA_SSH_PORT:-22}"
 SSH_KEY="${HA_SSH_KEY:-}"
 HA_USE_SUDO="${HA_USE_SUDO:-true}"
+HA_BUMP_RESOURCE_VERSION="${HA_BUMP_RESOURCE_VERSION:-true}"
+HA_RESOURCE_BASE_URL="${HA_RESOURCE_BASE_URL:-/local/seagull-card/seagull-card.js}"
 SSH_OPTS="-p ${SSH_PORT}"
 if [[ -n "$SSH_KEY" ]]; then
   SSH_OPTS="$SSH_OPTS -i $SSH_KEY"
@@ -39,5 +41,32 @@ fi
 
 echo "Deploying $DIST_FILE -> ${HA_SSH_USER}@${HA_HOST}:${HA_TARGET_PATH}"
 cat "$DIST_FILE" | ssh $SSH_OPTS "${HA_SSH_USER}@${HA_HOST}" "cat > /tmp/seagull-card.js && ${SUDO_PREFIX}mkdir -p \"$TARGET_DIR\" && ${SUDO_PREFIX}mv /tmp/seagull-card.js \"$HA_TARGET_PATH\""
+
+if [[ "$HA_BUMP_RESOURCE_VERSION" == "true" ]]; then
+  VERSION_STAMP="$(date +%s)"
+  echo "Updating Lovelace resource version: ${HA_RESOURCE_BASE_URL}?v=${VERSION_STAMP}"
+  ssh $SSH_OPTS "${HA_SSH_USER}@${HA_HOST}" "${SUDO_PREFIX}python3 - <<'PY'
+import json
+from pathlib import Path
+base_url = '${HA_RESOURCE_BASE_URL}'
+stamp = '${VERSION_STAMP}'
+path = Path('/config/.storage/lovelace_resources')
+if not path.exists():
+    print('lovelace_resources not found; skip')
+    raise SystemExit(0)
+obj = json.loads(path.read_text())
+changed = False
+for item in obj.get('data', {}).get('items', []):
+    url = item.get('url', '')
+    if url == base_url or url.startswith(base_url + '?v='):
+        item['url'] = base_url + '?v=' + stamp
+        changed = True
+if changed:
+    path.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + '\n')
+    print('lovelace resource updated')
+else:
+    print('resource entry not found; skip')
+PY"
+fi
 
 echo "✅ Deploy complete"

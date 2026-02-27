@@ -184,6 +184,7 @@ class SeagullCard extends HTMLElement {
           border: none;
           box-shadow: none;
           --ha-card-border-width: 0;
+          transition: background-color 220ms ease, box-shadow 220ms ease;
         }
         .content {
           display: flex;
@@ -193,8 +194,8 @@ class SeagullCard extends HTMLElement {
           gap: 10px;
         }
         .icon-wrap {
-          width: 32px;
-          height: 32px;
+          width: 42px;
+          height: 42px;
           border-radius: 50%;
           border: none;
           background: ${iconBackground};
@@ -204,10 +205,15 @@ class SeagullCard extends HTMLElement {
           cursor: pointer;
           flex: 0 0 auto;
           padding: 0;
+          transition: background-color 220ms ease, transform 180ms ease;
+        }
+        .icon-wrap:active {
+          transform: scale(0.97);
         }
         ha-icon {
           color: ${iconColor};
-          --mdc-icon-size: 18px;
+          --mdc-icon-size: 24px;
+          transition: color 220ms ease;
         }
         .label {
           font-size: 14px;
@@ -261,26 +267,38 @@ class SeagullCardEditor extends HTMLElement {
     this._render();
   }
 
-  _onValueChanged(ev) {
-    if (!this._config) return;
-    const key = ev.target.dataset.configValue;
-    if (!key) return;
+  _updateConfig(path, value) {
+    const newConfig = { ...(this._config || {}) };
 
-    const value = ev.target.value;
-    const newConfig = { ...this._config };
-
-    if (key.includes(".")) {
-      const [parent, child] = key.split(".");
+    if (path.includes(".")) {
+      const [parent, child] = path.split(".");
       newConfig[parent] = { ...(newConfig[parent] || {}) };
-      if (value === "") delete newConfig[parent][child];
+      if (value === "" || value == null) delete newConfig[parent][child];
       else newConfig[parent][child] = value;
     } else {
-      if (value === "") delete newConfig[key];
-      else newConfig[key] = value;
+      if (value === "" || value == null) delete newConfig[path];
+      else newConfig[path] = value;
     }
 
     this._config = newConfig;
     fireEvent(this, "config-changed", { config: newConfig });
+  }
+
+  _bindInput(selector, path, eventName = "change") {
+    const el = this.shadowRoot.querySelector(selector);
+    if (!el) return;
+
+    el.addEventListener(eventName, (ev) => {
+      const value = ev?.detail?.value ?? el.value ?? "";
+      this._updateConfig(path, value);
+    });
+
+    if (eventName !== "input") {
+      el.addEventListener("input", (ev) => {
+        const value = ev?.detail?.value ?? el.value ?? "";
+        this._updateConfig(path, value);
+      });
+    }
   }
 
   _render() {
@@ -288,55 +306,120 @@ class SeagullCardEditor extends HTMLElement {
 
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
 
-    const entityOptions = Object.keys(this._hass?.states || {})
-      .slice(0, 500)
-      .map((entityId) => `<option value="${entityId}"></option>`)
-      .join("");
-
     this.shadowRoot.innerHTML = `
       <style>
-        .grid { display: grid; gap: 10px; font-family: var(--primary-font-family); }
-        .row { display: grid; gap: 6px; }
-        label { font-size: 13px; color: var(--secondary-text-color); }
-        input, select {
-          width: 100%; box-sizing: border-box; padding: 8px;
-          border-radius: 8px; border: 1px solid var(--divider-color);
-          background: var(--card-background-color); color: var(--primary-text-color);
+        .stack { display: grid; gap: 12px; }
+        .section { padding: 4px 0; display: grid; gap: 12px; }
+        .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .field { display: grid; gap: 4px; }
+        .hint { color: var(--secondary-text-color); font-size: 12px; }
+        @media (max-width: 900px) { .pair { grid-template-columns: 1fr; } }
+        ha-code-editor {
+          --code-mirror-max-height: 140px;
+          border: 1px solid var(--divider-color);
+          border-radius: 12px;
+          overflow: hidden;
         }
       </style>
-      <div class="grid">
-        <div class="row">
-          <label>Entity</label>
-          <input list="seagull-entities" data-config-value="entity" value="${this._config.entity || ""}" />
-          <datalist id="seagull-entities">${entityOptions}</datalist>
-        </div>
 
-        <div class="row"><label>Text template</label><input data-config-value="text_template" value="${this._config.text_template || ""}" /></div>
-        <div class="row"><label>Card color template</label><input data-config-value="color_template" value="${this._config.color_template || ""}" /></div>
-        <div class="row"><label>Icon template</label><input data-config-value="icon_template" value="${this._config.icon_template || ""}" /></div>
-        <div class="row"><label>Icon color template</label><input data-config-value="icon_color_template" value="${this._config.icon_color_template || ""}" /></div>
-        <div class="row"><label>Icon background color template</label><input data-config-value="icon_background_color_template" value="${this._config.icon_background_color_template || ""}" /></div>
+      <div class="stack">
+        <ha-expansion-panel outlined expanded>
+          <div slot="header">Context</div>
+          <div class="section">
+            <ha-entity-picker id="entity"></ha-entity-picker>
+            <div class="hint">Entity is available in templates as <code>entity</code>.</div>
+          </div>
+        </ha-expansion-panel>
 
-        <div class="row">
-          <label>Tap behavior</label>
-          <select data-config-value="tap_action.action">
-            ${["none", "more-info", "toggle", "navigate", "url", "call-service"].map((v) => `<option value="${v}" ${((this._config.tap_action?.action || "more-info") === v) ? "selected" : ""}>${v}</option>`).join("")}
-          </select>
-        </div>
+        <ha-expansion-panel outlined expanded>
+          <div slot="header">Content Templates</div>
+          <div class="section">
+            <div class="field"><div class="hint">Text template</div><ha-code-editor id="text_template"></ha-code-editor></div>
+            <div class="field"><div class="hint">Card color template</div><ha-code-editor id="color_template"></ha-code-editor></div>
+            <div class="pair">
+              <div class="field"><div class="hint">Icon template</div><ha-code-editor id="icon_template"></ha-code-editor></div>
+              <div class="field"><div class="hint">Icon color template</div><ha-code-editor id="icon_color_template"></ha-code-editor></div>
+            </div>
+            <div class="field"><div class="hint">Icon background color template</div><ha-code-editor id="icon_background_color_template"></ha-code-editor></div>
+          </div>
+        </ha-expansion-panel>
 
-        <div class="row">
-          <label>Icon tap behavior</label>
-          <select data-config-value="icon_tap_action.action">
-            ${["none", "more-info", "toggle", "navigate", "url", "call-service"].map((v) => `<option value="${v}" ${((this._config.icon_tap_action?.action || "none") === v) ? "selected" : ""}>${v}</option>`).join("")}
-          </select>
-        </div>
+        <ha-expansion-panel outlined expanded>
+          <div slot="header">Actions</div>
+          <div class="section pair">
+            <div class="field">
+              <div class="hint">Tap behavior</div>
+              <ha-select id="tap_action">
+                <mwc-list-item value="none">none</mwc-list-item>
+                <mwc-list-item value="more-info">more-info</mwc-list-item>
+                <mwc-list-item value="toggle">toggle</mwc-list-item>
+                <mwc-list-item value="navigate">navigate</mwc-list-item>
+                <mwc-list-item value="url">url</mwc-list-item>
+                <mwc-list-item value="call-service">call-service</mwc-list-item>
+              </ha-select>
+            </div>
+
+            <div class="field">
+              <div class="hint">Icon tap behavior</div>
+              <ha-select id="icon_tap_action">
+                <mwc-list-item value="none">none</mwc-list-item>
+                <mwc-list-item value="more-info">more-info</mwc-list-item>
+                <mwc-list-item value="toggle">toggle</mwc-list-item>
+                <mwc-list-item value="navigate">navigate</mwc-list-item>
+                <mwc-list-item value="url">url</mwc-list-item>
+                <mwc-list-item value="call-service">call-service</mwc-list-item>
+              </ha-select>
+            </div>
+          </div>
+        </ha-expansion-panel>
       </div>
     `;
 
-    this.shadowRoot.querySelectorAll("input,select").forEach((el) => {
-      el.addEventListener("change", this._onValueChanged.bind(this));
-      el.addEventListener("input", this._onValueChanged.bind(this));
+    const entity = this.shadowRoot.querySelector("#entity");
+    if (entity) {
+      entity.hass = this._hass;
+      entity.value = this._config.entity || "";
+      entity.includeDomains = undefined;
+      entity.allowCustomEntity = true;
+      entity.label = "Entity";
+      entity.addEventListener("value-changed", (ev) => this._updateConfig("entity", ev.detail?.value || ""));
+      entity.addEventListener("change", () => this._updateConfig("entity", entity.value || ""));
+    }
+
+    const codeFields = [
+      ["#text_template", "text_template"],
+      ["#color_template", "color_template"],
+      ["#icon_template", "icon_template"],
+      ["#icon_color_template", "icon_color_template"],
+      ["#icon_background_color_template", "icon_background_color_template"],
+    ];
+
+    codeFields.forEach(([selector, path]) => {
+      const el = this.shadowRoot.querySelector(selector);
+      if (!el) return;
+      el.hass = this._hass;
+      el.value = this._config[path] || "";
+      el.mode = "jinja2";
+      el.autocomplete = true;
+      el.dir = "ltr";
+      el.addEventListener("value-changed", (ev) => this._updateConfig(path, ev.detail?.value ?? ""));
+      el.addEventListener("input", () => this._updateConfig(path, el.value || ""));
+      el.addEventListener("change", () => this._updateConfig(path, el.value || ""));
     });
+
+    const tap = this.shadowRoot.querySelector("#tap_action");
+    if (tap) {
+      tap.value = this._config.tap_action?.action || "more-info";
+      tap.addEventListener("selected", (ev) => this._updateConfig("tap_action.action", ev.detail.value));
+      tap.addEventListener("change", () => this._updateConfig("tap_action.action", tap.value));
+    }
+
+    const iconTap = this.shadowRoot.querySelector("#icon_tap_action");
+    if (iconTap) {
+      iconTap.value = this._config.icon_tap_action?.action || "none";
+      iconTap.addEventListener("selected", (ev) => this._updateConfig("icon_tap_action.action", ev.detail.value));
+      iconTap.addEventListener("change", () => this._updateConfig("icon_tap_action.action", iconTap.value));
+    }
   }
 }
 
