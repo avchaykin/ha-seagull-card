@@ -4,6 +4,8 @@
   "description": "Universal Home Assistant card with Jinja2 templates",
   "private": true,
   "scripts": {
-    "build": "mkdir -p dist && cp src/seagull-card.js dist/seagull-card.js"
+    "build": "mkdir -p dist && cp src/seagull-card.js dist/seagull-card.js",
+    "deploy:local": "bash scripts/deploy-local.sh",
+    "dev:push": "npm run build && npm run deploy:local"
   }
 }

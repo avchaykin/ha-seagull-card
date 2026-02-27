@@ -80,6 +80,23 @@ icon_tap_action:
 - `dist/seagull-card.js` — файл для HACS
 - `hacs.json` — метаданные HACS
 
+## Локальная разработка (быстрый dev-деплой без пуша)
+
+1. Добавьте ресурс в HA (один раз):
+   - URL: `/local/seagull-card/seagull-card.js`
+   - Type: `module`
+2. Скопируйте `.env.local.example` в `.env.local` и заполните SSH-параметры вашего HA.
+3. Выполните:
+
+```bash
+npm install
+npm run dev:push
+```
+
+Это соберет карточку и загрузит `dist/seagull-card.js` на ваш HA в `/config/www/seagull-card/seagull-card.js` (или путь из `.env.local`).
+
+После деплоя сделайте hard refresh Lovelace.
+
 ## Разработка
 
 ```bash
