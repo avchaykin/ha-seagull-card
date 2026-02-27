@@ -18,6 +18,8 @@ A universal custom Home Assistant card with Jinja2 templates (in the spirit of M
   - `icon_color_template` — icon color (black by default)
   - `icon_background_color_template` — icon background (white by default)
   - `icon_border_color_template` — icon circle border color (white by default)
+  - `badge_icon_template` — badge icon (empty by default)
+  - `badge_color_template` — badge color (red by default)
 - Actions:
   - `tap_action` — card click action (default: `toggle`)
   - `icon_tap_action` — main icon click action
@@ -67,6 +69,10 @@ icon_background_color_template: >-
   {{ '#ffffff' }}
 icon_border_color_template: >-
   {{ '#ffffff' }}
+badge_icon_template: >-
+  {{ 'mdi:heat-wave' }}
+badge_color_template: >-
+  {{ '#ff3b30' }}
 tap_action:
   action: toggle
 icon_tap_action:

@@ -34,6 +34,8 @@ class SeagullCard extends HTMLElement {
       icon_color_template: "{{ '#000000' }}",
       icon_background_color_template: "{{ '#ffffff' }}",
       icon_border_color_template: "{{ '#ffffff' }}",
+      badge_icon_template: "",
+      badge_color_template: "{{ '#ff3b30' }}",
       tap_action: { action: "toggle" },
       icon_tap_action: { action: "none" },
       sub_entities: [],
@@ -120,6 +122,8 @@ class SeagullCard extends HTMLElement {
       icon_color_template: this._config.icon_color_template || "",
       icon_background_color_template: this._config.icon_background_color_template || "",
       icon_border_color_template: this._config.icon_border_color_template || "",
+      badge_icon_template: this._config.badge_icon_template || "",
+      badge_color_template: this._config.badge_color_template || "",
       text_template: this._config.text_template || "",
       sub_entities: this._config.sub_entities || [],
     });
@@ -135,6 +139,8 @@ class SeagullCard extends HTMLElement {
       icon_color: this._config.icon_color_template,
       icon_background_color: this._config.icon_background_color_template,
       icon_border_color: this._config.icon_border_color_template,
+      badge_icon: this._config.badge_icon_template,
+      badge_color: this._config.badge_color_template,
       text: this._config.text_template,
     };
 
@@ -249,6 +255,8 @@ class SeagullCard extends HTMLElement {
     const iconColor = this._resolvedValue("icon_color", "#000000");
     const iconBackground = this._resolvedValue("icon_background_color", "#ffffff");
     const iconBorderColor = this._resolvedValue("icon_border_color", "#ffffff");
+    const badgeIcon = this._resolvedValue("badge_icon", "");
+    const badgeColor = this._resolvedValue("badge_color", "#ff3b30");
     const text = this._resolvedValue("text", "");
     const subEntities = this._config.sub_entities || [];
 
@@ -269,7 +277,7 @@ class SeagullCard extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; }
+        :host { display: block; font-family: var(--ha-font-family-body); }
         ha-card {
           min-height: 58px;
           border-radius: 9999px;
@@ -304,6 +312,7 @@ class SeagullCard extends HTMLElement {
           border-radius: 50%;
           border: 2px solid ${iconBorderColor};
           background: ${iconBackground};
+          position: relative;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -317,6 +326,24 @@ class SeagullCard extends HTMLElement {
           color: ${iconColor};
           --mdc-icon-size: 27px;
           transition: color 220ms ease;
+        }
+        .badge {
+          position: absolute;
+          right: -3px;
+          top: -3px;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: ${badgeColor};
+          color: #fff;
+          border: 2px solid ${iconBorderColor};
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .badge ha-icon {
+          color: #fff;
+          --mdc-icon-size: 10px;
         }
         .label {
           font-size: 14px;
@@ -374,6 +401,7 @@ class SeagullCard extends HTMLElement {
           <div class="main">
             <button class="icon-wrap" type="button" aria-label="Icon action">
               <ha-icon icon="${icon}"></ha-icon>
+              ${badgeIcon ? `<span class="badge"><ha-icon icon="${badgeIcon}"></ha-icon></span>` : ""}
             </button>
             <div class="label">${text}</div>
           </div>
@@ -499,7 +527,7 @@ class SeagullCardEditor extends HTMLElement {
     this._rendered = true;
     this.shadowRoot.innerHTML = `
       <style>
-        .stack { display: grid; gap: 12px; }
+        .stack { display: grid; gap: 12px; font-family: var(--ha-font-family-body); }
         .hint { font-size: 12px; color: var(--secondary-text-color); margin-top: 6px; }
         .sub-list { display: grid; gap: 8px; margin-bottom: 10px; }
         .sub-row {
@@ -565,6 +593,8 @@ class SeagullCardEditor extends HTMLElement {
         { name: "icon_color_template", label: "Icon color template", selector: { template: {} } },
         { name: "icon_background_color_template", label: "Icon background color template", selector: { template: {} } },
         { name: "icon_border_color_template", label: "Icon border color template", selector: { template: {} } },
+        { name: "badge_icon_template", label: "Badge icon template", selector: { template: {} } },
+        { name: "badge_color_template", label: "Badge color template", selector: { template: {} } },
       ],
       this._config
     );
@@ -723,6 +753,8 @@ class SeagullCardEditor extends HTMLElement {
     if (Object.prototype.hasOwnProperty.call(value, "icon_color_template")) newConfig.icon_color_template = value.icon_color_template;
     if (Object.prototype.hasOwnProperty.call(value, "icon_background_color_template")) newConfig.icon_background_color_template = value.icon_background_color_template;
     if (Object.prototype.hasOwnProperty.call(value, "icon_border_color_template")) newConfig.icon_border_color_template = value.icon_border_color_template;
+    if (Object.prototype.hasOwnProperty.call(value, "badge_icon_template")) newConfig.badge_icon_template = value.badge_icon_template;
+    if (Object.prototype.hasOwnProperty.call(value, "badge_color_template")) newConfig.badge_color_template = value.badge_color_template;
     if (Object.prototype.hasOwnProperty.call(value, "tap_action_action")) {
       newConfig.tap_action = { ...(newConfig.tap_action || {}), action: value.tap_action_action || "none" };
     }
