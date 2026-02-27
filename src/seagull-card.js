@@ -28,7 +28,7 @@ class SeagullCard extends HTMLElement {
     return {
       type: "custom:seagull-card",
       entity: "light.kitchen",
-      text_template: "{{ state_attr(entity, 'friendly_name') }}",
+      text_template: "",
       color_template: "{{ 'var(--state-light-active-color)' if is_state(entity, 'on') else '#9e9e9e' }}",
       icon_template: "{{ 'mdi:lightbulb-on' if is_state(entity, 'on') else 'mdi:lightbulb' }}",
       icon_color_template: "{{ '#000000' }}",
@@ -43,10 +43,21 @@ class SeagullCard extends HTMLElement {
       throw new Error("Seagull Card: entity is required");
     }
 
+    const normalizedTap =
+      typeof config.tap_action === "string"
+        ? { action: config.tap_action }
+        : config.tap_action;
+    const normalizedIconTap =
+      typeof config.icon_tap_action === "string"
+        ? { action: config.icon_tap_action }
+        : config.icon_tap_action;
+
     this._config = {
       tap_action: { action: "more-info" },
       icon_tap_action: { action: "none" },
       ...config,
+      tap_action: { action: "more-info", ...(normalizedTap || {}) },
+      icon_tap_action: { action: "none", ...(normalizedIconTap || {}) },
     };
 
     this._subscribeTemplates();
@@ -174,23 +185,21 @@ class SeagullCard extends HTMLElement {
     if (!this._config) return;
 
     const stateObj = this._getStateObj();
-    const fallbackText = stateObj?.attributes?.friendly_name || this._config.entity;
-
     const cardColor = this._resolvedValue("color", "#9e9e9e");
     const icon = this._resolvedValue("icon", stateObj?.attributes?.icon || "mdi:help-circle");
     const iconColor = this._resolvedValue("icon_color", "#000000");
     const iconBackground = this._resolvedValue("icon_background_color", "#ffffff");
-    const text = this._resolvedValue("text", fallbackText);
+    const text = this._resolvedValue("text", "");
 
     this.shadowRoot.innerHTML = `
       <style>
         :host { display: block; }
         ha-card {
-          min-height: 56px;
+          min-height: 58px;
           border-radius: 9999px;
           background: ${cardColor};
           box-sizing: border-box;
-          padding: 8px 12px;
+          padding: 6px 12px;
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -207,8 +216,8 @@ class SeagullCard extends HTMLElement {
           gap: 10px;
         }
         .icon-wrap {
-          width: 42px;
-          height: 42px;
+          width: 46px;
+          height: 46px;
           border-radius: 50%;
           border: none;
           background: ${iconBackground};
@@ -225,7 +234,7 @@ class SeagullCard extends HTMLElement {
         }
         ha-icon {
           color: ${iconColor};
-          --mdc-icon-size: 24px;
+          --mdc-icon-size: 27px;
           transition: color 220ms ease;
         }
         .label {
@@ -237,7 +246,7 @@ class SeagullCard extends HTMLElement {
           white-space: nowrap;
         }
       </style>
-      <ha-card class="card" tabindex="0" role="button" aria-label="${text}">
+      <ha-card class="card" tabindex="0" role="button" aria-label="${text || this._config.entity}">
         <div class="content">
           <button class="icon-wrap" type="button" aria-label="Icon action">
             <ha-icon icon="${icon}"></ha-icon>
@@ -279,10 +288,21 @@ class SeagullCardEditor extends HTMLElement {
   }
 
   setConfig(config) {
+    const normalizedTap =
+      typeof config?.tap_action === "string"
+        ? { action: config.tap_action }
+        : config?.tap_action;
+    const normalizedIconTap =
+      typeof config?.icon_tap_action === "string"
+        ? { action: config.icon_tap_action }
+        : config?.icon_tap_action;
+
     const normalized = {
       tap_action: { action: "more-info" },
       icon_tap_action: { action: "none" },
       ...config,
+      tap_action: { action: "more-info", ...(normalizedTap || {}) },
+      icon_tap_action: { action: "none", ...(normalizedIconTap || {}) },
     };
 
     const nextHash = JSON.stringify(normalized);
@@ -367,7 +387,7 @@ class SeagullCardEditor extends HTMLElement {
       "#actions-form",
       [
         {
-          name: "tap_action",
+          name: "tap_action_action",
           label: "Tap behavior",
           selector: {
             select: {
@@ -384,7 +404,7 @@ class SeagullCardEditor extends HTMLElement {
           },
         },
         {
-          name: "icon_tap_action",
+          name: "icon_tap_action_action",
           label: "Icon tap behavior",
           selector: {
             select: {
@@ -402,8 +422,8 @@ class SeagullCardEditor extends HTMLElement {
         },
       ],
       {
-        tap_action: this._config.tap_action?.action || "more-info",
-        icon_tap_action: this._config.icon_tap_action?.action || "none",
+        tap_action_action: this._config.tap_action?.action || "more-info",
+        icon_tap_action_action: this._config.icon_tap_action?.action || "none",
       }
     );
   }
@@ -454,11 +474,11 @@ class SeagullCardEditor extends HTMLElement {
     if (Object.prototype.hasOwnProperty.call(value, "icon_background_color_template")) {
       newConfig.icon_background_color_template = value.icon_background_color_template;
     }
-    if (Object.prototype.hasOwnProperty.call(value, "tap_action")) {
-      newConfig.tap_action = { ...(newConfig.tap_action || {}), action: value.tap_action || "none" };
+    if (Object.prototype.hasOwnProperty.call(value, "tap_action_action")) {
+      newConfig.tap_action = { ...(newConfig.tap_action || {}), action: value.tap_action_action || "none" };
     }
-    if (Object.prototype.hasOwnProperty.call(value, "icon_tap_action")) {
-      newConfig.icon_tap_action = { ...(newConfig.icon_tap_action || {}), action: value.icon_tap_action || "none" };
+    if (Object.prototype.hasOwnProperty.call(value, "icon_tap_action_action")) {
+      newConfig.icon_tap_action = { ...(newConfig.icon_tap_action || {}), action: value.icon_tap_action_action || "none" };
     }
 
     this._config = newConfig;
