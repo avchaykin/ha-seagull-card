@@ -33,8 +33,9 @@ class SeagullCard extends HTMLElement {
       icon_template: "{{ 'mdi:lightbulb-on' if is_state(entity, 'on') else 'mdi:lightbulb' }}",
       icon_color_template: "{{ '#000000' }}",
       icon_background_color_template: "{{ '#ffffff' }}",
-      tap_action: { action: "more-info" },
-      icon_tap_action: { action: "toggle" },
+      icon_border_color_template: "{{ '#ffffff' }}",
+      tap_action: { action: "toggle" },
+      icon_tap_action: { action: "none" },
       sub_entities: [],
     };
   }
@@ -54,11 +55,11 @@ class SeagullCard extends HTMLElement {
         : config.icon_tap_action;
 
     this._config = {
-      tap_action: { action: "more-info" },
+      tap_action: { action: "toggle" },
       icon_tap_action: { action: "none" },
       sub_entities: [],
       ...config,
-      tap_action: { action: "more-info", ...(normalizedTap || {}) },
+      tap_action: { action: "toggle", ...(normalizedTap || {}) },
       icon_tap_action: { action: "none", ...(normalizedIconTap || {}) },
       sub_entities: this._normalizeSubEntities(config.sub_entities),
     };
@@ -100,6 +101,7 @@ class SeagullCard extends HTMLElement {
         icon_template: item.icon_template || "",
         icon_color_template: item.icon_color_template || "",
         icon_background_color_template: item.icon_background_color_template || "",
+        icon_border_color_template: item.icon_border_color_template || "",
         text_template: item.text_template || "",
         tap_action:
           typeof item.tap_action === "string"
@@ -117,6 +119,7 @@ class SeagullCard extends HTMLElement {
       icon_template: this._config.icon_template || "",
       icon_color_template: this._config.icon_color_template || "",
       icon_background_color_template: this._config.icon_background_color_template || "",
+      icon_border_color_template: this._config.icon_border_color_template || "",
       text_template: this._config.text_template || "",
       sub_entities: this._config.sub_entities || [],
     });
@@ -131,6 +134,7 @@ class SeagullCard extends HTMLElement {
       icon: this._config.icon_template,
       icon_color: this._config.icon_color_template,
       icon_background_color: this._config.icon_background_color_template,
+      icon_border_color: this._config.icon_border_color_template,
       text: this._config.text_template,
     };
 
@@ -159,6 +163,7 @@ class SeagullCard extends HTMLElement {
         icon: sub.icon_template,
         icon_color: sub.icon_color_template,
         icon_background_color: sub.icon_background_color_template,
+        icon_border_color: sub.icon_border_color_template,
         text: sub.text_template,
       };
 
@@ -243,6 +248,7 @@ class SeagullCard extends HTMLElement {
     const icon = this._resolvedValue("icon", stateObj?.attributes?.icon || "mdi:help-circle");
     const iconColor = this._resolvedValue("icon_color", "#000000");
     const iconBackground = this._resolvedValue("icon_background_color", "#ffffff");
+    const iconBorderColor = this._resolvedValue("icon_border_color", "#ffffff");
     const text = this._resolvedValue("text", "");
     const subEntities = this._config.sub_entities || [];
 
@@ -253,10 +259,11 @@ class SeagullCard extends HTMLElement {
         const subIcon = this._subResolvedValue(index, "icon", subState?.attributes?.icon || "mdi:help-circle");
         const subIconColor = this._subResolvedValue(index, "icon_color", "#000000");
         const subIconBg = this._subResolvedValue(index, "icon_background_color", "#ffffff");
+        const subIconBorder = this._subResolvedValue(index, "icon_border_color", "#ffffff");
         const subText = this._subResolvedValue(index, "text", "");
         const hasText = Boolean(subText && String(subText).trim());
         const shapeClass = hasText ? "sub-pill" : "sub-circle";
-        return `<button class="sub-item ${shapeClass}" data-sub-index="${index}" type="button" aria-label="${sub.entity}" style="--sub-icon-bg:${subIconBg}; --sub-icon-color:${subIconColor};"><ha-icon icon="${subIcon}"></ha-icon>${hasText ? `<span>${subText}</span>` : ""}</button>`;
+        return `<button class="sub-item ${shapeClass}" data-sub-index="${index}" type="button" aria-label="${sub.entity}" style="--sub-icon-bg:${subIconBg}; --sub-icon-color:${subIconColor}; --sub-icon-border:${subIconBorder};"><ha-icon icon="${subIcon}"></ha-icon>${hasText ? `<span>${subText}</span>` : ""}</button>`;
       })
       .join("");
 
@@ -295,7 +302,7 @@ class SeagullCard extends HTMLElement {
           width: 46px;
           height: 46px;
           border-radius: 50%;
-          border: none;
+          border: 2px solid ${iconBorderColor};
           background: ${iconBackground};
           display: inline-flex;
           align-items: center;
@@ -328,7 +335,7 @@ class SeagullCard extends HTMLElement {
           flex-wrap: wrap;
         }
         .sub-item {
-          border: none;
+          border: 2px solid var(--sub-icon-border, #ffffff);
           background: var(--sub-icon-bg);
           color: var(--sub-icon-color);
           display: inline-flex;
@@ -429,11 +436,11 @@ class SeagullCardEditor extends HTMLElement {
         : config?.icon_tap_action;
 
     const normalized = {
-      tap_action: { action: "more-info" },
+      tap_action: { action: "toggle" },
       icon_tap_action: { action: "none" },
       sub_entities: [],
       ...config,
-      tap_action: { action: "more-info", ...(normalizedTap || {}) },
+      tap_action: { action: "toggle", ...(normalizedTap || {}) },
       icon_tap_action: { action: "none", ...(normalizedIconTap || {}) },
       sub_entities: this._normalizeSubEntities(config?.sub_entities),
     };
@@ -469,6 +476,7 @@ class SeagullCardEditor extends HTMLElement {
         icon_template: item.icon_template || "",
         icon_color_template: item.icon_color_template || "",
         icon_background_color_template: item.icon_background_color_template || "",
+        icon_border_color_template: item.icon_border_color_template || "",
         text_template: item.text_template || "",
         tap_action:
           typeof item.tap_action === "string"
@@ -556,6 +564,7 @@ class SeagullCardEditor extends HTMLElement {
         { name: "icon_template", label: "Icon template", selector: { template: {} } },
         { name: "icon_color_template", label: "Icon color template", selector: { template: {} } },
         { name: "icon_background_color_template", label: "Icon background color template", selector: { template: {} } },
+        { name: "icon_border_color_template", label: "Icon border color template", selector: { template: {} } },
       ],
       this._config
     );
@@ -575,7 +584,7 @@ class SeagullCardEditor extends HTMLElement {
         },
       ],
       {
-        tap_action_action: this._config.tap_action?.action || "more-info",
+        tap_action_action: this._config.tap_action?.action || "toggle",
         icon_tap_action_action: this._config.icon_tap_action?.action || "none",
       }
     );
@@ -630,7 +639,7 @@ class SeagullCardEditor extends HTMLElement {
     }
 
     this.shadowRoot.querySelector("#sub-add")?.addEventListener("click", () => {
-      const next = [...items, { entity: "", icon_template: "", icon_color_template: "", icon_background_color_template: "", text_template: "", tap_action: { action: "none" } }];
+      const next = [...items, { entity: "", icon_template: "", icon_color_template: "", icon_background_color_template: "", icon_border_color_template: "", text_template: "", tap_action: { action: "none" } }];
       this._config.sub_entities = next;
       this._selectedSubIndex = next.length - 1;
       this._emitConfig({ ...this._config, sub_entities: next }, true);
@@ -681,6 +690,7 @@ class SeagullCardEditor extends HTMLElement {
         { name: "sub_icon_template", label: "Icon template", selector: { template: {} } },
         { name: "sub_icon_color_template", label: "Icon color template", selector: { template: {} } },
         { name: "sub_icon_background_color_template", label: "Icon background color template", selector: { template: {} } },
+        { name: "sub_icon_border_color_template", label: "Icon border color template", selector: { template: {} } },
         { name: "sub_text_template", label: "Text template", selector: { template: {} } },
         {
           name: "sub_tap_action",
@@ -693,6 +703,7 @@ class SeagullCardEditor extends HTMLElement {
         sub_icon_template: selected.icon_template || "",
         sub_icon_color_template: selected.icon_color_template || "",
         sub_icon_background_color_template: selected.icon_background_color_template || "",
+        sub_icon_border_color_template: selected.icon_border_color_template || "",
         sub_text_template: selected.text_template || "",
         sub_tap_action: selected.tap_action?.action || "none",
       }
@@ -711,6 +722,7 @@ class SeagullCardEditor extends HTMLElement {
     if (Object.prototype.hasOwnProperty.call(value, "icon_template")) newConfig.icon_template = value.icon_template;
     if (Object.prototype.hasOwnProperty.call(value, "icon_color_template")) newConfig.icon_color_template = value.icon_color_template;
     if (Object.prototype.hasOwnProperty.call(value, "icon_background_color_template")) newConfig.icon_background_color_template = value.icon_background_color_template;
+    if (Object.prototype.hasOwnProperty.call(value, "icon_border_color_template")) newConfig.icon_border_color_template = value.icon_border_color_template;
     if (Object.prototype.hasOwnProperty.call(value, "tap_action_action")) {
       newConfig.tap_action = { ...(newConfig.tap_action || {}), action: value.tap_action_action || "none" };
     }
@@ -727,6 +739,7 @@ class SeagullCardEditor extends HTMLElement {
       if (Object.prototype.hasOwnProperty.call(value, "sub_icon_template")) { sub.icon_template = value.sub_icon_template; subChanged = true; }
       if (Object.prototype.hasOwnProperty.call(value, "sub_icon_color_template")) { sub.icon_color_template = value.sub_icon_color_template; subChanged = true; }
       if (Object.prototype.hasOwnProperty.call(value, "sub_icon_background_color_template")) { sub.icon_background_color_template = value.sub_icon_background_color_template; subChanged = true; }
+      if (Object.prototype.hasOwnProperty.call(value, "sub_icon_border_color_template")) { sub.icon_border_color_template = value.sub_icon_border_color_template; subChanged = true; }
       if (Object.prototype.hasOwnProperty.call(value, "sub_text_template")) { sub.text_template = value.sub_text_template; subChanged = true; }
       if (Object.prototype.hasOwnProperty.call(value, "sub_tap_action")) { sub.tap_action = { ...(sub.tap_action || {}), action: value.sub_tap_action || "none" }; subChanged = true; }
       if (subChanged) {

@@ -17,8 +17,9 @@
   - `icon_template` — иконка
   - `icon_color_template` — цвет иконки (по умолчанию черный)
   - `icon_background_color_template` — фон иконки (по умолчанию белый)
+  - `icon_border_color_template` — цвет рамки круга иконки (по умолчанию белый)
 - Действия:
-  - `tap_action` — клик по карточке
+  - `tap_action` — клик по карточке (по умолчанию `toggle`)
   - `icon_tap_action` — клик по иконке
 - `sub_entities` — массив вложенных элементов справа (каждый с собственным `entity`, шаблонами, `tap_action`)
 - Поддержка визуального редактора Lovelace (UI)
@@ -64,8 +65,10 @@ icon_color_template: >-
   {{ '#000000' }}
 icon_background_color_template: >-
   {{ '#ffffff' }}
+icon_border_color_template: >-
+  {{ '#ffffff' }}
 tap_action:
-  action: more-info
+  action: toggle
 icon_tap_action:
   action: toggle
 sub_entities:
@@ -73,6 +76,7 @@ sub_entities:
     icon_template: "{{ 'mdi:battery' }}"
     icon_color_template: "{{ '#000000' }}"
     icon_background_color_template: "{{ '#ffffff' }}"
+    icon_border_color_template: "{{ '#ffffff' }}"
     text_template: "{{ states(entity) }}%"
     tap_action:
       action: more-info
@@ -80,6 +84,7 @@ sub_entities:
     icon_template: "{{ 'mdi:door-open' if is_state(entity, 'on') else 'mdi:door-closed' }}"
     icon_color_template: "{{ '#000000' }}"
     icon_background_color_template: "{{ '#ffffff' }}"
+    icon_border_color_template: "{{ '#ffffff' }}"
     text_template: ""
     tap_action:
       action: more-info
