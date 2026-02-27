@@ -338,11 +338,11 @@ class SeagullCardEditor extends HTMLElement {
     this._renderForm(
       "#content-form",
       [
-        { name: "text_template", label: "Text template", selector: { text: { multiline: true } } },
-        { name: "color_template", label: "Card color template", selector: { text: { multiline: true } } },
-        { name: "icon_template", label: "Icon template", selector: { text: { multiline: true } } },
-        { name: "icon_color_template", label: "Icon color template", selector: { text: { multiline: true } } },
-        { name: "icon_background_color_template", label: "Icon background color template", selector: { text: { multiline: true } } },
+        { name: "text_template", label: "Text template", selector: { template: {} } },
+        { name: "color_template", label: "Card color template", selector: { template: {} } },
+        { name: "icon_template", label: "Icon template", selector: { template: {} } },
+        { name: "icon_color_template", label: "Icon color template", selector: { template: {} } },
+        { name: "icon_background_color_template", label: "Icon background color template", selector: { template: {} } },
       ],
       this._config
     );
