@@ -17,6 +17,7 @@ class SeagullCard extends HTMLElement {
     this._hass = null;
     this._rendered = {};
     this._unsubs = {};
+    this._templateSignature = "";
   }
 
   static getConfigElement() {
@@ -78,6 +79,18 @@ class SeagullCard extends HTMLElement {
 
   _subscribeTemplates() {
     if (!this._hass || !this._config) return;
+
+    const signature = JSON.stringify({
+      entity: this._config.entity,
+      color_template: this._config.color_template || "",
+      icon_template: this._config.icon_template || "",
+      icon_color_template: this._config.icon_color_template || "",
+      icon_background_color_template: this._config.icon_background_color_template || "",
+      text_template: this._config.text_template || "",
+    });
+
+    if (signature === this._templateSignature) return;
+    this._templateSignature = signature;
 
     this._clearTemplateSubs();
 
@@ -257,6 +270,11 @@ class SeagullCard extends HTMLElement {
 }
 
 class SeagullCardEditor extends HTMLElement {
+  constructor() {
+    super();
+    this._timers = {};
+  }
+
   setConfig(config) {
     this._config = { ...config };
     this._render();
@@ -284,21 +302,12 @@ class SeagullCardEditor extends HTMLElement {
     fireEvent(this, "config-changed", { config: newConfig });
   }
 
-  _bindInput(selector, path, eventName = "change") {
-    const el = this.shadowRoot.querySelector(selector);
-    if (!el) return;
-
-    el.addEventListener(eventName, (ev) => {
-      const value = ev?.detail?.value ?? el.value ?? "";
+  _debouncedUpdate(path, value, delay = 400) {
+    if (this._timers[path]) clearTimeout(this._timers[path]);
+    this._timers[path] = setTimeout(() => {
       this._updateConfig(path, value);
-    });
-
-    if (eventName !== "input") {
-      el.addEventListener("input", (ev) => {
-        const value = ev?.detail?.value ?? el.value ?? "";
-        this._updateConfig(path, value);
-      });
-    }
+      delete this._timers[path];
+    }, delay);
   }
 
   _render() {
@@ -402,8 +411,7 @@ class SeagullCardEditor extends HTMLElement {
       el.mode = "jinja2";
       el.autocomplete = true;
       el.dir = "ltr";
-      el.addEventListener("value-changed", (ev) => this._updateConfig(path, ev.detail?.value ?? ""));
-      el.addEventListener("input", () => this._updateConfig(path, el.value || ""));
+      el.addEventListener("value-changed", (ev) => this._debouncedUpdate(path, ev.detail?.value ?? "", 450));
       el.addEventListener("change", () => this._updateConfig(path, el.value || ""));
     });
 
