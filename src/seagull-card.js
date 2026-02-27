@@ -199,7 +199,7 @@ class SeagullCard extends HTMLElement {
           border-radius: 9999px;
           background: ${cardColor};
           box-sizing: border-box;
-          padding: 6px 12px;
+          padding: 6px 12px 6px 6px;
           cursor: pointer;
           display: flex;
           align-items: center;
