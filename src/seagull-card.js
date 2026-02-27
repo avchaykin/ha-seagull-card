@@ -273,25 +273,41 @@ class SeagullCardEditor extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+    this._rendered = false;
+    this._skipNextSetConfigRender = false;
+    this._lastConfigHash = "";
   }
 
   setConfig(config) {
-    this._config = {
+    const normalized = {
       tap_action: { action: "more-info" },
       icon_tap_action: { action: "none" },
       ...config,
     };
+
+    const nextHash = JSON.stringify(normalized);
+    if (nextHash === this._lastConfigHash) return;
+
+    this._config = normalized;
+    this._lastConfigHash = nextHash;
+
+    if (this._skipNextSetConfigRender) {
+      this._skipNextSetConfigRender = false;
+      return;
+    }
+
     this._render();
   }
 
   set hass(hass) {
     this._hass = hass;
-    this._render();
+    if (!this._rendered) this._render();
   }
 
   _render() {
     if (!this._hass || !this._config) return;
 
+    this._rendered = true;
     this.shadowRoot.innerHTML = `
       <style>
         .stack { display: grid; gap: 12px; }
@@ -446,6 +462,8 @@ class SeagullCardEditor extends HTMLElement {
     }
 
     this._config = newConfig;
+    this._lastConfigHash = JSON.stringify(newConfig);
+    this._skipNextSetConfigRender = true;
     fireEvent(this, "config-changed", { config: newConfig });
   }
 }
