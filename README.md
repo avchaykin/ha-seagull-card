@@ -2,55 +2,55 @@
 
 [![Open Bubble Card on Home Assistant Community Store (HACS)](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=avchaykin&repository=ha-seagull-card&category=plugin)
 
-Универсальная пользовательская карточка для Home Assistant c Jinja2-шаблонами (в духе Mushroom Card).
+A universal custom Home Assistant card with Jinja2 templates (in the spirit of Mushroom Card).
 
-## Что есть в v0.1.2
+## What is included in v0.1.2
 
-- Компактная карточка (меньше стандартной Tile Card)
-- Максимально скругленные края (pill-форма)
-- Без каемки/бордера
-- Серый фон по умолчанию
-- Контекст `entity` (обязательный)
-- Контент через Jinja2-шаблоны:
-  - `text_template` — текст справа от иконки (по умолчанию пустой)
-  - `color_template` — цвет карточки (по умолчанию серый)
-  - `icon_template` — иконка
-  - `icon_color_template` — цвет иконки (по умолчанию черный)
-  - `icon_background_color_template` — фон иконки (по умолчанию белый)
-  - `icon_border_color_template` — цвет рамки круга иконки (по умолчанию белый)
-- Действия:
-  - `tap_action` — клик по карточке (по умолчанию `toggle`)
-  - `icon_tap_action` — клик по иконке
-- `sub_entities` — массив вложенных элементов справа (каждый с собственным `entity`, шаблонами, `tap_action`)
-- Поддержка визуального редактора Lovelace (UI)
-- Увеличенный блок иконки (иконка + круглый фон)
-- Плавные анимации смены цвета (фон карточки/иконки)
-- Поля шаблонов в кодовом редакторе (`ha-code-editor`, моноширинный стиль)
-- Стандартизированный редактор с группировкой по секциям (`ha-expansion-panel`)
+- Compact card (smaller than the standard Tile Card)
+- Fully rounded pill shape
+- Borderless card container
+- Gray background by default
+- `entity` context (required)
+- Jinja2-driven content:
+  - `text_template` — text to the right of the icon (empty by default)
+  - `color_template` — card background color (gray by default)
+  - `icon_template` — icon
+  - `icon_color_template` — icon color (black by default)
+  - `icon_background_color_template` — icon background (white by default)
+  - `icon_border_color_template` — icon circle border color (white by default)
+- Actions:
+  - `tap_action` — card click action (default: `toggle`)
+  - `icon_tap_action` — main icon click action
+- `sub_entities` — right-aligned nested items (each has its own `entity`, templates, and `tap_action`)
+- Lovelace visual editor support
+- Enlarged icon block (icon + circular background)
+- Smooth color transitions
+- Template fields using HA template editor controls
+- Section-based editor layout
 
-## Установка через HACS (стандартный путь)
+## Install via HACS (standard flow)
 
-> Пока репозиторий не в дефолтном каталоге HACS, добавляется как **Custom repository**.
+> Until this repo is in the default HACS catalog, add it as a **Custom repository**.
 
-1. Откройте HACS → **⋮** → **Custom repositories**.
-2. Добавьте URL репозитория:  
+1. Open HACS → **⋮** → **Custom repositories**.
+2. Add repository URL:  
    `https://github.com/avchaykin/ha-seagull-card`
-3. Тип репозитория: **Dashboard**.
-4. Нажмите **Add**.
-5. Перейдите в HACS → Dashboard и найдите **Seagull Card**.
-6. Нажмите **Download** / **Update**.
-7. Перезапустите Home Assistant.
+3. Repository type: **Dashboard**.
+4. Click **Add**.
+5. Go to HACS → Dashboard and find **Seagull Card**.
+6. Click **Download** / **Update**.
+7. Restart Home Assistant.
 
-После установки HACS сам добавит ресурс `/hacsfiles/seagull-card.js` в Lovelace (если включено управление ресурсами через HACS).
+If HACS resource management is enabled, HACS will add `/hacsfiles/seagull-card.js` to Lovelace automatically.
 
-## Ручное добавление ресурса (если нужно)
+## Manual resource setup (if needed)
 
 Settings → Dashboards → Resources:
 
 - URL: `/hacsfiles/seagull-card.js`
 - Type: `module`
 
-## Пример конфигурации
+## Example configuration
 
 ```yaml
 type: custom:seagull-card
@@ -90,7 +90,7 @@ sub_entities:
       action: more-info
 ```
 
-## Поддерживаемые action
+## Supported actions
 
 - `none`
 - `more-info`
@@ -99,37 +99,35 @@ sub_entities:
 - `url` (`url_path`)
 - `call-service` (`service`, `data`, `target`)
 
-## Структура репозитория
+## Repository structure
 
-- `src/seagull-card.js` — исходник
-- `dist/seagull-card.js` — файл для HACS
-- `hacs.json` — метаданные HACS
+- `src/seagull-card.js` — source file
+- `dist/seagull-card.js` — HACS-distributed build
+- `hacs.json` — HACS metadata
 
-## Локальная разработка (быстрый dev-деплой без пуша)
+## Local development (fast dev deploy without release push)
 
-1. Добавьте ресурс в HA (один раз):
+1. Add resource in HA (once):
    - URL: `/local/seagull-card/seagull-card.js?v=dev`
    - Type: `module`
-2. Скопируйте `.env.local.example` в `.env.local` и заполните SSH-параметры вашего HA.
-3. Выполните:
+2. Copy `.env.local.example` to `.env.local` and fill in your HA SSH settings.
+3. Run:
 
 ```bash
 npm install
 npm run dev:push
 ```
 
-Это соберет карточку и загрузит `dist/seagull-card.js` на ваш HA в `/config/www/seagull-card/seagull-card.js` (или путь из `.env.local`).
+This builds the card and uploads `dist/seagull-card.js` to `/config/www/seagull-card/seagull-card.js` on your HA instance (or custom path from `.env.local`).
 
-По умолчанию ресурс держится как стабильный URL (`/local/seagull-card/seagull-card.js`) без ручного редактирования в Manage resources.
-
-Если нужен агрессивный cache-bust, включите в `.env.local`:
+By default, deploy can keep a stable resource URL, and you can enable aggressive cache-busting in `.env.local`:
 `HA_BUMP_RESOURCE_VERSION=true`.
 
-## Разработка
+## Development
 
 ```bash
 npm install
 npm run build
 ```
 
-После `build` файл `dist/seagull-card.js` готов к публикации.
+After `build`, `dist/seagull-card.js` is ready for publishing.
