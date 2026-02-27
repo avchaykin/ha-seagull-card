@@ -283,8 +283,9 @@ class SeagullCard extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; font-family: var(--ha-font-family-body); }
+        :host { display: block; font-family: var(--ha-font-family-body, var(--paper-font-body1_-_font-family, Roboto, sans-serif)); }
         ha-card {
+          font-family: var(--ha-font-family-body, var(--paper-font-body1_-_font-family, Roboto, sans-serif));
           min-height: 58px;
           border-radius: 9999px;
           background: ${cardColor};
@@ -335,8 +336,8 @@ class SeagullCard extends HTMLElement {
         }
         .badge {
           position: absolute;
-          right: -5px;
-          top: -5px;
+          right: -3px;
+          top: -3px;
           width: 16px;
           height: 16px;
           border-radius: 50%;
@@ -350,8 +351,8 @@ class SeagullCard extends HTMLElement {
         }
         .badge ha-icon {
           color: #fff;
-          --mdc-icon-size: 9px;
-          transform: translateY(-0.5px);
+          --mdc-icon-size: 11px;
+          transform: none;
         }
         .label {
           font-size: 14px;
@@ -386,8 +387,8 @@ class SeagullCard extends HTMLElement {
         }
         .sub-badge {
           position: absolute;
-          right: -5px;
-          top: -5px;
+          right: -3px;
+          top: -3px;
           width: 14px;
           height: 14px;
           border-radius: 50%;
@@ -400,8 +401,8 @@ class SeagullCard extends HTMLElement {
         }
         .sub-badge ha-icon {
           color: #fff;
-          --mdc-icon-size: 8px;
-          transform: translateY(-0.5px);
+          --mdc-icon-size: 9px;
+          transform: none;
         }
         .sub-circle {
           width: 40px;
@@ -557,7 +558,7 @@ class SeagullCardEditor extends HTMLElement {
     this._rendered = true;
     this.shadowRoot.innerHTML = `
       <style>
-        .stack { display: grid; gap: 12px; font-family: var(--ha-font-family-body); }
+        .stack { display: grid; gap: 12px; font-family: var(--ha-font-family-body, var(--paper-font-body1_-_font-family, Roboto, sans-serif)); }
         .hint { font-size: 12px; color: var(--secondary-text-color); margin-top: 6px; }
         .sub-list { display: grid; gap: 8px; margin-bottom: 10px; }
         .sub-row {
