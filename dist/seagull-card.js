@@ -270,11 +270,6 @@ class SeagullCard extends HTMLElement {
 }
 
 class SeagullCardEditor extends HTMLElement {
-  constructor() {
-    super();
-    this._timers = {};
-  }
-
   setConfig(config) {
     this._config = { ...config };
     this._render();
@@ -302,132 +297,60 @@ class SeagullCardEditor extends HTMLElement {
     fireEvent(this, "config-changed", { config: newConfig });
   }
 
-  _debouncedUpdate(path, value, delay = 400) {
-    if (this._timers[path]) clearTimeout(this._timers[path]);
-    this._timers[path] = setTimeout(() => {
-      this._updateConfig(path, value);
-      delete this._timers[path];
-    }, delay);
-  }
-
   _render() {
     if (!this._config) return;
-
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
+
+    const entities = Object.keys(this._hass?.states || {}).slice(0, 500);
+    const entityOptions = entities.map((entityId) => `<option value="${entityId}"></option>`).join("");
 
     this.shadowRoot.innerHTML = `
       <style>
-        .stack { display: grid; gap: 12px; }
-        .section { padding: 4px 0; display: grid; gap: 12px; }
-        .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .field { display: grid; gap: 4px; }
-        .hint { color: var(--secondary-text-color); font-size: 12px; }
-        @media (max-width: 900px) { .pair { grid-template-columns: 1fr; } }
-        ha-code-editor {
-          --code-mirror-max-height: 140px;
-          border: 1px solid var(--divider-color);
-          border-radius: 12px;
-          overflow: hidden;
+        .grid { display: grid; gap: 10px; font-family: var(--primary-font-family); }
+        .row { display: grid; gap: 6px; }
+        .section { border: 1px solid var(--divider-color); border-radius: 12px; padding: 10px; display: grid; gap: 10px; }
+        .title { font-weight: 600; font-size: 13px; color: var(--secondary-text-color); }
+        textarea, input, select {
+          width: 100%; box-sizing: border-box; padding: 8px;
+          border-radius: 8px; border: 1px solid var(--divider-color);
+          background: var(--card-background-color); color: var(--primary-text-color);
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
+        textarea { min-height: 58px; resize: vertical; }
       </style>
+      <div class="grid">
+        <div class="section">
+          <div class="title">Context</div>
+          <input list="seagull-entities" data-config-value="entity" value="${this._config.entity || ""}" />
+          <datalist id="seagull-entities">${entityOptions}</datalist>
+        </div>
 
-      <div class="stack">
-        <ha-expansion-panel outlined expanded>
-          <div slot="header">Context</div>
-          <div class="section">
-            <ha-entity-picker id="entity"></ha-entity-picker>
-            <div class="hint">Entity is available in templates as <code>entity</code>.</div>
-          </div>
-        </ha-expansion-panel>
+        <div class="section">
+          <div class="title">Content Templates</div>
+          <textarea data-config-value="text_template">${this._config.text_template || ""}</textarea>
+          <textarea data-config-value="color_template">${this._config.color_template || ""}</textarea>
+          <textarea data-config-value="icon_template">${this._config.icon_template || ""}</textarea>
+          <textarea data-config-value="icon_color_template">${this._config.icon_color_template || ""}</textarea>
+          <textarea data-config-value="icon_background_color_template">${this._config.icon_background_color_template || ""}</textarea>
+        </div>
 
-        <ha-expansion-panel outlined expanded>
-          <div slot="header">Content Templates</div>
-          <div class="section">
-            <div class="field"><div class="hint">Text template</div><ha-code-editor id="text_template"></ha-code-editor></div>
-            <div class="field"><div class="hint">Card color template</div><ha-code-editor id="color_template"></ha-code-editor></div>
-            <div class="pair">
-              <div class="field"><div class="hint">Icon template</div><ha-code-editor id="icon_template"></ha-code-editor></div>
-              <div class="field"><div class="hint">Icon color template</div><ha-code-editor id="icon_color_template"></ha-code-editor></div>
-            </div>
-            <div class="field"><div class="hint">Icon background color template</div><ha-code-editor id="icon_background_color_template"></ha-code-editor></div>
-          </div>
-        </ha-expansion-panel>
-
-        <ha-expansion-panel outlined expanded>
-          <div slot="header">Actions</div>
-          <div class="section pair">
-            <div class="field">
-              <div class="hint">Tap behavior</div>
-              <ha-select id="tap_action">
-                <mwc-list-item value="none">none</mwc-list-item>
-                <mwc-list-item value="more-info">more-info</mwc-list-item>
-                <mwc-list-item value="toggle">toggle</mwc-list-item>
-                <mwc-list-item value="navigate">navigate</mwc-list-item>
-                <mwc-list-item value="url">url</mwc-list-item>
-                <mwc-list-item value="call-service">call-service</mwc-list-item>
-              </ha-select>
-            </div>
-
-            <div class="field">
-              <div class="hint">Icon tap behavior</div>
-              <ha-select id="icon_tap_action">
-                <mwc-list-item value="none">none</mwc-list-item>
-                <mwc-list-item value="more-info">more-info</mwc-list-item>
-                <mwc-list-item value="toggle">toggle</mwc-list-item>
-                <mwc-list-item value="navigate">navigate</mwc-list-item>
-                <mwc-list-item value="url">url</mwc-list-item>
-                <mwc-list-item value="call-service">call-service</mwc-list-item>
-              </ha-select>
-            </div>
-          </div>
-        </ha-expansion-panel>
+        <div class="section">
+          <div class="title">Actions</div>
+          <select data-config-value="tap_action.action">
+            ${["none", "more-info", "toggle", "navigate", "url", "call-service"].map((v) => `<option value="${v}" ${((this._config.tap_action?.action || "more-info") === v) ? "selected" : ""}>tap: ${v}</option>`).join("")}
+          </select>
+          <select data-config-value="icon_tap_action.action">
+            ${["none", "more-info", "toggle", "navigate", "url", "call-service"].map((v) => `<option value="${v}" ${((this._config.icon_tap_action?.action || "none") === v) ? "selected" : ""}>icon tap: ${v}</option>`).join("")}
+          </select>
+        </div>
       </div>
     `;
 
-    const entity = this.shadowRoot.querySelector("#entity");
-    if (entity) {
-      entity.hass = this._hass;
-      entity.value = this._config.entity || "";
-      entity.includeDomains = undefined;
-      entity.allowCustomEntity = true;
-      entity.label = "Entity";
-      entity.addEventListener("value-changed", (ev) => this._updateConfig("entity", ev.detail?.value || ""));
-      entity.addEventListener("change", () => this._updateConfig("entity", entity.value || ""));
-    }
-
-    const codeFields = [
-      ["#text_template", "text_template"],
-      ["#color_template", "color_template"],
-      ["#icon_template", "icon_template"],
-      ["#icon_color_template", "icon_color_template"],
-      ["#icon_background_color_template", "icon_background_color_template"],
-    ];
-
-    codeFields.forEach(([selector, path]) => {
-      const el = this.shadowRoot.querySelector(selector);
-      if (!el) return;
-      el.hass = this._hass;
-      el.value = this._config[path] || "";
-      el.mode = "jinja2";
-      el.autocomplete = true;
-      el.dir = "ltr";
-      el.addEventListener("value-changed", (ev) => this._debouncedUpdate(path, ev.detail?.value ?? "", 450));
+    this.shadowRoot.querySelectorAll("input,textarea,select").forEach((el) => {
+      const path = el.dataset.configValue;
+      if (!path) return;
       el.addEventListener("change", () => this._updateConfig(path, el.value || ""));
     });
-
-    const tap = this.shadowRoot.querySelector("#tap_action");
-    if (tap) {
-      tap.value = this._config.tap_action?.action || "more-info";
-      tap.addEventListener("selected", (ev) => this._updateConfig("tap_action.action", ev.detail.value));
-      tap.addEventListener("change", () => this._updateConfig("tap_action.action", tap.value));
-    }
-
-    const iconTap = this.shadowRoot.querySelector("#icon_tap_action");
-    if (iconTap) {
-      iconTap.value = this._config.icon_tap_action?.action || "none";
-      iconTap.addEventListener("selected", (ev) => this._updateConfig("icon_tap_action.action", ev.detail.value));
-      iconTap.addEventListener("change", () => this._updateConfig("icon_tap_action.action", iconTap.value));
-    }
   }
 }
 
