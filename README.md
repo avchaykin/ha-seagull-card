@@ -6,11 +6,13 @@
 
 ## Что есть в v0.1
 
-- Карточка стандартной высоты (близко к Tile Card)
+- Компактная карточка (меньше стандартной Tile Card)
 - Максимально скругленные края (pill-форма)
+- Без каемки/бордера
 - Серый фон по умолчанию
 - Контекст `entity` (обязательный)
 - Контент через Jinja2-шаблоны:
+  - `text_template` — текст справа от иконки
   - `color_template` — цвет карточки (по умолчанию серый)
   - `icon_template` — иконка
   - `icon_color_template` — цвет иконки (по умолчанию черный)
@@ -18,6 +20,7 @@
 - Действия:
   - `tap_action` — клик по карточке
   - `icon_tap_action` — клик по иконке
+- Поддержка визуального редактора Lovelace (UI)
 
 ## Установка через HACS (стандартный путь)
 
@@ -46,6 +49,8 @@ Settings → Dashboards → Resources:
 ```yaml
 type: custom:seagull-card
 entity: light.kitchen
+text_template: >-
+  {{ state_attr(entity, 'friendly_name') }}
 color_template: >-
   {{ 'var(--state-light-active-color)' if is_state(entity, 'on') else '#9e9e9e' }}
 icon_template: >-
