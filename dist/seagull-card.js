@@ -35,6 +35,7 @@ class SeagullCard extends HTMLElement {
       icon_background_color_template: "{{ '#ffffff' }}",
       tap_action: { action: "more-info" },
       icon_tap_action: { action: "toggle" },
+      sub_entities: [],
     };
   }
 
@@ -55,9 +56,11 @@ class SeagullCard extends HTMLElement {
     this._config = {
       tap_action: { action: "more-info" },
       icon_tap_action: { action: "none" },
+      sub_entities: [],
       ...config,
       tap_action: { action: "more-info", ...(normalizedTap || {}) },
       icon_tap_action: { action: "none", ...(normalizedIconTap || {}) },
+      sub_entities: this._normalizeSubEntities(config.sub_entities),
     };
 
     this._subscribeTemplates();
@@ -88,6 +91,23 @@ class SeagullCard extends HTMLElement {
     this._unsubs = {};
   }
 
+  _normalizeSubEntities(items) {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((item) => item && typeof item === "object" && item.entity)
+      .map((item) => ({
+        entity: item.entity,
+        icon_template: item.icon_template || "",
+        icon_color_template: item.icon_color_template || "",
+        icon_background_color_template: item.icon_background_color_template || "",
+        text_template: item.text_template || "",
+        tap_action:
+          typeof item.tap_action === "string"
+            ? { action: item.tap_action }
+            : { action: "none", ...(item.tap_action || {}) },
+      }));
+  }
+
   _subscribeTemplates() {
     if (!this._hass || !this._config) return;
 
@@ -98,6 +118,7 @@ class SeagullCard extends HTMLElement {
       icon_color_template: this._config.icon_color_template || "",
       icon_background_color_template: this._config.icon_background_color_template || "",
       text_template: this._config.text_template || "",
+      sub_entities: this._config.sub_entities || [],
     });
 
     if (signature === this._templateSignature) return;
@@ -131,6 +152,34 @@ class SeagullCard extends HTMLElement {
         }
       );
     });
+
+    (this._config.sub_entities || []).forEach((sub, index) => {
+      const subTemplates = {
+        icon: sub.icon_template,
+        icon_color: sub.icon_color_template,
+        icon_background_color: sub.icon_background_color_template,
+        text: sub.text_template,
+      };
+
+      Object.entries(subTemplates).forEach(([field, template]) => {
+        if (!template || typeof template !== "string") return;
+        const key = `sub_${index}_${field}`;
+        this._unsubs[key] = this._hass.connection.subscribeMessage(
+          (msg) => {
+            if (msg?.result !== undefined) {
+              this._rendered[key] = String(msg.result);
+              this._render();
+            }
+          },
+          {
+            type: "render_template",
+            template,
+            entity_ids: [sub.entity],
+            variables: { entity: sub.entity },
+          }
+        );
+      });
+    });
   }
 
   _getStateObj() {
@@ -140,6 +189,10 @@ class SeagullCard extends HTMLElement {
   _resolvedValue(key, fallback) {
     const value = this._rendered[key];
     return value !== undefined && value !== "" ? value : fallback;
+  }
+
+  _subResolvedValue(index, field, fallback) {
+    return this._resolvedValue(`sub_${index}_${field}`, fallback);
   }
 
   _handleAction(actionConfig) {
@@ -190,6 +243,20 @@ class SeagullCard extends HTMLElement {
     const iconColor = this._resolvedValue("icon_color", "#000000");
     const iconBackground = this._resolvedValue("icon_background_color", "#ffffff");
     const text = this._resolvedValue("text", "");
+    const subEntities = this._config.sub_entities || [];
+
+    const subHtml = subEntities
+      .map((sub, index) => {
+        const subState = this._hass?.states?.[sub.entity];
+        const subIcon = this._subResolvedValue(index, "icon", subState?.attributes?.icon || "mdi:help-circle");
+        const subIconColor = this._subResolvedValue(index, "icon_color", "#000000");
+        const subIconBg = this._subResolvedValue(index, "icon_background_color", "#ffffff");
+        const subText = this._subResolvedValue(index, "text", "");
+        const hasText = Boolean(subText && String(subText).trim());
+        const shapeClass = hasText ? "sub-pill" : "sub-circle";
+        return `<button class="sub-item ${shapeClass}" data-sub-index="${index}" type="button" aria-label="${sub.entity}" style="--sub-icon-bg:${subIconBg}; --sub-icon-color:${subIconColor};"><ha-icon icon="${subIcon}"></ha-icon>${hasText ? `<span>${subText}</span>` : ""}</button>`;
+      })
+      .join("");
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -215,6 +282,13 @@ class SeagullCard extends HTMLElement {
           min-width: 0;
           gap: 10px;
         }
+        .main {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+          gap: 10px;
+          flex: 1 1 auto;
+        }
         .icon-wrap {
           width: 46px;
           height: 46px;
@@ -229,9 +303,7 @@ class SeagullCard extends HTMLElement {
           padding: 0;
           transition: background-color 220ms ease, transform 180ms ease;
         }
-        .icon-wrap:active {
-          transform: scale(0.97);
-        }
+        .icon-wrap:active { transform: scale(0.97); }
         ha-icon {
           color: ${iconColor};
           --mdc-icon-size: 27px;
@@ -245,19 +317,65 @@ class SeagullCard extends HTMLElement {
           text-overflow: ellipsis;
           white-space: nowrap;
         }
+        .subs {
+          margin-left: auto;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .sub-item {
+          border: none;
+          background: var(--sub-icon-bg);
+          color: var(--sub-icon-color);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background-color 220ms ease, color 220ms ease;
+        }
+        .sub-item ha-icon {
+          color: var(--sub-icon-color);
+          --mdc-icon-size: 22px;
+        }
+        .sub-circle {
+          width: 40px;
+          height: 40px;
+          border-radius: 999px;
+          padding: 0;
+        }
+        .sub-pill {
+          height: 40px;
+          border-radius: 999px;
+          padding: 0 12px;
+          gap: 8px;
+          max-width: 180px;
+        }
+        .sub-pill span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-size: 13px;
+          color: var(--sub-icon-color);
+        }
       </style>
       <ha-card class="card" tabindex="0" role="button" aria-label="${text || this._config.entity}">
         <div class="content">
-          <button class="icon-wrap" type="button" aria-label="Icon action">
-            <ha-icon icon="${icon}"></ha-icon>
-          </button>
-          <div class="label">${text}</div>
+          <div class="main">
+            <button class="icon-wrap" type="button" aria-label="Icon action">
+              <ha-icon icon="${icon}"></ha-icon>
+            </button>
+            <div class="label">${text}</div>
+          </div>
+          <div class="subs">${subHtml}</div>
         </div>
       </ha-card>
     `;
 
     const card = this.shadowRoot.querySelector(".card");
     const iconBtn = this.shadowRoot.querySelector(".icon-wrap");
+    const subButtons = this.shadowRoot.querySelectorAll(".sub-item");
 
     card?.addEventListener("click", () => this._handleAction(this._config.tap_action));
     card?.addEventListener("keydown", (ev) => {
@@ -270,6 +388,16 @@ class SeagullCard extends HTMLElement {
     iconBtn?.addEventListener("click", (ev) => {
       ev.stopPropagation();
       this._handleAction(this._config.icon_tap_action);
+    });
+
+    subButtons.forEach((btn) => {
+      btn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const index = Number(btn.dataset.subIndex);
+        const sub = this._config.sub_entities?.[index];
+        if (!sub) return;
+        this._handleAction({ ...(sub.tap_action || { action: "none" }), entity: sub.entity });
+      });
     });
   }
 
@@ -300,9 +428,11 @@ class SeagullCardEditor extends HTMLElement {
     const normalized = {
       tap_action: { action: "more-info" },
       icon_tap_action: { action: "none" },
+      sub_entities: [],
       ...config,
       tap_action: { action: "more-info", ...(normalizedTap || {}) },
       icon_tap_action: { action: "none", ...(normalizedIconTap || {}) },
+      sub_entities: this._normalizeSubEntities(config?.sub_entities),
     };
 
     const nextHash = JSON.stringify(normalized);
@@ -367,8 +497,16 @@ class SeagullCardEditor extends HTMLElement {
           required: true,
           selector: { entity: {} },
         },
+        {
+          name: "sub_entities_json",
+          label: "Sub entities (JSON array)",
+          selector: { text: { multiline: true } },
+        },
       ],
-      this._config
+      {
+        ...this._config,
+        sub_entities_json: JSON.stringify(this._config.sub_entities || [], null, 2),
+      }
     );
 
     this._renderForm(
@@ -450,6 +588,23 @@ class SeagullCardEditor extends HTMLElement {
     }, 0);
   }
 
+  _normalizeSubEntities(items) {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((item) => item && typeof item === "object" && item.entity)
+      .map((item) => ({
+        entity: item.entity,
+        icon_template: item.icon_template || "",
+        icon_color_template: item.icon_color_template || "",
+        icon_background_color_template: item.icon_background_color_template || "",
+        text_template: item.text_template || "",
+        tap_action:
+          typeof item.tap_action === "string"
+            ? { action: item.tap_action }
+            : { action: "none", ...(item.tap_action || {}) },
+      }));
+  }
+
   _valueChanged(ev) {
     const value = ev.detail?.value;
     if (!value) return;
@@ -458,6 +613,14 @@ class SeagullCardEditor extends HTMLElement {
 
     if (Object.prototype.hasOwnProperty.call(value, "entity")) {
       newConfig.entity = value.entity;
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "sub_entities_json")) {
+      try {
+        const parsed = JSON.parse(value.sub_entities_json || "[]");
+        newConfig.sub_entities = this._normalizeSubEntities(parsed);
+      } catch (_e) {
+        // ignore invalid json while typing
+      }
     }
     if (Object.prototype.hasOwnProperty.call(value, "text_template")) {
       newConfig.text_template = value.text_template;

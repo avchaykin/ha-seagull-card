@@ -20,6 +20,7 @@
 - Действия:
   - `tap_action` — клик по карточке
   - `icon_tap_action` — клик по иконке
+- `sub_entities` — массив вложенных элементов справа (каждый с собственным `entity`, шаблонами, `tap_action`)
 - Поддержка визуального редактора Lovelace (UI)
 - Увеличенный блок иконки (иконка + круглый фон)
 - Плавные анимации смены цвета (фон карточки/иконки)
@@ -67,6 +68,21 @@ tap_action:
   action: more-info
 icon_tap_action:
   action: toggle
+sub_entities:
+  - entity: sensor.battery_phone
+    icon_template: "{{ 'mdi:battery' }}"
+    icon_color_template: "{{ '#000000' }}"
+    icon_background_color_template: "{{ '#ffffff' }}"
+    text_template: "{{ states(entity) }}%"
+    tap_action:
+      action: more-info
+  - entity: binary_sensor.door
+    icon_template: "{{ 'mdi:door-open' if is_state(entity, 'on') else 'mdi:door-closed' }}"
+    icon_color_template: "{{ '#000000' }}"
+    icon_background_color_template: "{{ '#ffffff' }}"
+    text_template: ""
+    tap_action:
+      action: more-info
 ```
 
 ## Поддерживаемые action
