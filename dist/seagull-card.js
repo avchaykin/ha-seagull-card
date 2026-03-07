@@ -336,10 +336,10 @@ class SeagullCard extends HTMLElement {
         }
         .badge {
           position: absolute;
-          right: -3px;
-          top: -3px;
-          width: 16px;
-          height: 16px;
+          right: -2px;
+          top: -2px;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           background: ${badgeColor};
           color: #fff;
@@ -347,12 +347,14 @@ class SeagullCard extends HTMLElement {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          line-height: 1;
+          padding: 0;
+          line-height: 0;
+          box-sizing: border-box;
         }
         .badge ha-icon {
           color: #fff;
-          --mdc-icon-size: 11px;
-          transform: none;
+          --mdc-icon-size: 12px;
+          display: block;
         }
         .label {
           font-size: 14px;
@@ -387,22 +389,24 @@ class SeagullCard extends HTMLElement {
         }
         .sub-badge {
           position: absolute;
-          right: -3px;
-          top: -3px;
-          width: 14px;
-          height: 14px;
+          right: -2px;
+          top: -2px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           background: var(--sub-badge-color, #ff3b30);
           border: none;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          line-height: 1;
+          padding: 0;
+          line-height: 0;
+          box-sizing: border-box;
         }
         .sub-badge ha-icon {
           color: #fff;
-          --mdc-icon-size: 9px;
-          transform: none;
+          --mdc-icon-size: 10px;
+          display: block;
         }
         .sub-circle {
           width: 40px;
